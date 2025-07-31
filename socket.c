@@ -60,21 +60,25 @@ void sendMessage(int sockfd, const char* message, const char* target_ip) {
 }
 
 void listenLoop(int sockfd) {
-	char buffer[MAXBUF];
-	struct sockaddr_in sender;
-	int addrlen = sizeof(sender);
-	
-	while(1) {
-		ssize_t recvlen = recvfrom(sockfd, buffer, MAXBUF - 1, 0,
-							(struct sockaddr *)&sender, &addrlen);
-		if (recvlen > 0) {
-			buffer[recvlen] = '\0';
-			printf("Received from %s:\n%s\n", inet_ntoa(sender.sin_addr), buffer);
-			
-			if (strstr(buffer, "TYPE: LNSP")) {
-				Profile p = parseProfile(buffer);
-				printVerboseProfile(p);
-			}
-		}
-	}
+    char buffer[2048];
+    struct sockaddr_in senderAddr;
+    int addrLen = sizeof(senderAddr);
+
+    printf("Listening for LSNP messages on port 50999...\n");
+
+    while (1) {
+        ssize_t bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer) - 1, 0,
+                                         (struct sockaddr*)&senderAddr, &addrLen);
+        if (bytesReceived < 0) {
+            perror("recvfrom failed");
+            break;
+        }
+
+        buffer[bytesReceived] = '\0';  // Null-terminate the message
+        printf("Received message from %s:%d\n",
+               inet_ntoa(senderAddr.sin_addr), ntohs(senderAddr.sin_port));
+        printf("Message:\n%s\n", buffer);
+
+        // TODO: Call your parser here to interpret key-value LSNP message
+    }
 }

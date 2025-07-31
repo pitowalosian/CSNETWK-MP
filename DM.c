@@ -53,21 +53,9 @@ void printDMSimple(Profile profiles[], int profileCount, Dm dm) {
 		printf("FROM: %s\n", profiles[fromIdx].displayName);
 	}
 
-	if (strlen(profiles[toIdx].displayName) == 0) {
-		printf("TO: %s\n", profiles[toIdx].userID);
-	} else {
-		printf("TO: %s\n", profiles[toIdx].displayName);
-	}
-
 	printf("CONTENT: %s\n", dm.content);
 
 	if (profiles[fromIdx].hasAvatar) {
-		printf("AVATAR_TYPE: %s\n", profiles[fromIdx].avatarType);
-		printf("AVATAR_ENCODING: %s\n", profiles[fromIdx].avatarEncoding);
-		printf("AVATAR_DATA: %s\n", profiles[fromIdx].avatarData);
-	} else if (profiles[toIdx].hasAvatar) {
-		printf("AVATAR_TYPE: %s\n", profiles[toIdx].avatarType);
-		printf("AVATAR_ENCODING: %s\n", profiles[toIdx].avatarEncoding);
-		printf("AVATAR_DATA: %s\n", profiles[toIdx].avatarData);
-	}
+		printf("(User has an avatar but cannot be displayed as of the moment.)\n");
+	} 
 }

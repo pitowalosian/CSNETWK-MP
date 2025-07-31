@@ -9,6 +9,6 @@
 char* getFieldValue(const char *buffer, const char *key);
 Profile parseProfile(const char *buffer);
 //Post parsePost(const char *buffer);
-Dm parseDM(const char *buffer);
+Dm parseDm(const char *buffer);
 
 #endif // PARSE_H
