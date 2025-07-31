@@ -1,24 +1,25 @@
 #ifndef DM_H
 #define DM_H
 
-#define MAXSTRING 256
-#define MAX 20480
-#define CONSTANT 50
+#define MAX_STRING_SIZE 256
+#define MAX_PROFILES 10
+
+#include "profile.h"
 
 typedef struct {
-	char type[CONSTANT];
-	char from[MAXSTRING];
-	char to[MAXSTRING];
-	char content[MAXSTRING];
-	char timestamp[MAXSTRING];
-	char messageID[MAXSTRING];
-	char token[MAX];
+	char type[50];
+	char from[MAX_STRING_SIZE];
+	char to[MAX_STRING_SIZE];
+	char content[MAX_STRING_SIZE];
+	char timestamp[MAX_STRING_SIZE];
+	char messageID[MAX_STRING_SIZE];
+	char token[MAX_STRING_SIZE];
 } Dm;
 
-Dm createDm(const char* from, const char* to, const char* content, const char* timestamp, const char* messageID, const char* token);
-	
-int findProfile(Profile p[], Dm dm);
-void printVerboseDM(Dm dm);
-void printSimpleDM(Dm dm);
+Dm createDm(const char *from, const char *to, const char *content,
+	const char *timestamp, const char *messageID, const char *token);
+void printDMVerbose(Dm dm);
+int findProfileIndex(Profile p[], int profileCount, const char *userID);
+void printDMSimple(Profile profiles[], int profileCount, Dm dm);
 
 #endif // DM_H

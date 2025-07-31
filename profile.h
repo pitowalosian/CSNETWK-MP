@@ -3,7 +3,7 @@
 
 #define MAXSTRING 256
 #define CONSTANT 50
-#define MAX 20480
+#define MAX 2048
 
 typedef struct {
 	char type[CONSTANT];
