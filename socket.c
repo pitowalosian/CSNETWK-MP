@@ -69,6 +69,9 @@ void listenLoop(int sockfd) {
     while (1) {
         ssize_t bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer) - 1, 0,
                                          (struct sockaddr*)&senderAddr, &addrLen);
+
+	printf("waiting for data...");
+	    
         if (bytesReceived < 0) {
             perror("recvfrom failed");
             break;
