@@ -9,11 +9,6 @@
 #include <time.h>
 
 
-#define SERVER_PORT 50999
-#define BUF_SIZE 4096
-#define MAX_PEERS 100
-#define MAX_MESSAGES 100
-
 int verbose = 1;
 
 void log_debug(const char *msg) {
@@ -21,23 +16,6 @@ void log_debug(const char *msg) {
         printf("[DEBUG] %s\n", msg);
     }
 }
-
-typedef struct {
-    char user_id[64];
-    char display_name[64];
-} Peer;
-
-typedef struct {
-    char from[64];
-    char content[1024];
-    char type[16];
-} Message;
-
-Peer known_peers[MAX_PEERS];
-int peer_count = 0;
-
-Message messages[MAX_MESSAGES];
-int message_count = 0;
 
 void add_peer(const char *user_id, const char *display_name) {
     for (int i = 0; i < peer_count; i++) {
