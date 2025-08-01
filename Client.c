@@ -75,7 +75,7 @@ void print_messages() {
     }
 }
 
-void parse_lsnp_message(const char *buffer) {
+void parse_message(const char *buffer) {
     char lines[20][256];
     int line_count = 0;
 
