@@ -8,6 +8,7 @@
 #include <socket.h>
 #include <time.h>
 
+#include "Client.h"
 
 int verbose = 1;
 
