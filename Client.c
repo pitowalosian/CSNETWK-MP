@@ -104,7 +104,7 @@ void *receive_loop(void *arg) {
         if (n > 0) {
             buffer[n] = '\0';
             log_debug("Received message.");
-            parse_lsnp_message(buffer);
+            parse_message(buffer);
         }
         usleep(100000);
     }
