@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <pthread.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
+#include <socket.h>
 #include <time.h>
+
 
 #define SERVER_PORT 50999
 #define BUF_SIZE 4096
