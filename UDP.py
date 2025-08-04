@@ -1,12 +1,14 @@
 # udp_peer.py
 import socket
 import threading
+import time
 import Messages
 
 # === CONFIGURATION ===
 PORT = 50999
 BUFFER_SIZE = 4096
 PEER_IP = "192.168.1.52" # Replace with the actual peer IP address
+DEFAULT_TTL = 3600  # 1 hour default
 
 # === USER INPUTS ===
 name = input("Enter your display name: ");
@@ -15,8 +17,30 @@ verbose = False  # Verbose mode flag
 
 # === UDP SOCKET SETUP ===
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Allow address reuse
 sock.bind(("0.0.0.0", PORT)) # Bind to all interfaces on the specified port
 print(f"Successfully bound to port {PORT}")
+
+# === PING MESSAGE ===
+def broadcast_ping(name, status):
+    ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
+
+    while True:
+        if (verbose):
+            msg = Messages.verboseProfMessage(
+                    display_name=name,
+                    ip_address=ip_address,
+                    status=status,
+                    av_type="image/png",
+                    av_encoding="base64",
+                    av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")  # Truncated sample
+            ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
+        else: return
+
+        sock.sendto(msg.encode(), (PEER_IP, PORT))
+        sock.sendto(ping.encode(), (PEER_IP, PORT))
+        time.sleep(30)
+        
 
 # === RECEIVE LOOP ===
 def receive_messages(verbose):
@@ -24,9 +48,11 @@ def receive_messages(verbose):
         data, addr = sock.recvfrom(BUFFER_SIZE)
         print(f"\nReceived from {addr}:\n{data.decode()}\n")
 
+
 # === SEND LOOP ===
 def send_messages(name, status, verbose):
     ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
+    ttl = DEFAULT_TTL  # Default TTL
     while True: 
         command = input("Enter command (--help for options): ")
         match command:
@@ -35,6 +61,9 @@ def send_messages(name, status, verbose):
             case "--verbose":
                 verbose = True;
                 print("Verbose mode enabled.")
+            case "--ttl": 
+                input = input(f"Enter TTL in seconds (default = {DEFAULT_TTL}): ").strip()
+                ttl = int(input) if input.isdigit() else DEFAULT_TTL
             case "--profile":
                 if (not verbose):
                     msg = Messages.simpleProfMessage(display_name=name, status=status)
@@ -48,6 +77,27 @@ def send_messages(name, status, verbose):
                 )
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Profile Message sent.")
+            case "--post":
+                content = input("Enter your post content: ")
+                if (not verbose):
+                    msg = Messages.simplePostMessage(
+                        display_name=name, 
+                        content=content,
+                        av_type="image/png",
+                        av_encoding="base64",
+                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
+                else:
+                    msg = Messages.verbosePostMessage(
+                        display_name=name,
+                        ip_address=ip_address,
+                        ttl=ttl,
+                        content=content,
+                        av_type="image/png",
+                        av_encoding="base64",
+                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+                    )
+                sock.sendto(msg.encode(), (PEER_IP, PORT))
+                print("Post message sent.")
             case "--dm":
                 recName = input("Enter recipient's display name: ")
                 message = input("Enter your message: ")
@@ -68,8 +118,11 @@ def send_messages(name, status, verbose):
                 sock.close()
                 return
 
+
 # === RUN THREADS ===
 recv_thread = threading.Thread(target=receive_messages, args=(verbose,), daemon=True)
 recv_thread.start()
+ping_thread = threading.Thread(target=broadcast_ping, args=(name, status,), daemon=True)
+ping_thread.start()
 
 send_messages(name, status, verbose)  # Runs in main thread
