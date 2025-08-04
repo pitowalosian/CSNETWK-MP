@@ -49,7 +49,7 @@ TO: {userID}
 CONTENT: {message}
 TIMESTAMP: {timeStamp}
 MESSAGE_ID: {message_id}
-TOKEN: {sender}@{ip_address}|{message_id + ttl}|chat
+TOKEN: {sender}@{ip_address}|{timeStamp + ttl}|chat
 """
 def simpleDMMessage(sender, message, av_type, av_encoding, av_data):
     dm = f"""
@@ -69,21 +69,22 @@ def pingMessage(display_name, ip_address):
 USER_ID: {display_name}@{ip_address}
 """
 
-# === ACK MESSAGE FORMAT ===
-def ackMessage(message_id, status):
+# =k== ACK MESSAGE FORMAT ===
+def ackMessage(message_id):
     return f"""TYPE: ACK
 MESSAGE_ID: {message_id}
-STATUS: {status}
+STATUS: RECEIVED
 """
 
 # === FOLLOW MESSAGE FORMAT ===
 def followVerboseMessage(follower, userID, ip_address, ttl):
+    token = timeStamp + ttl
     return f"""TYPE: FOLLOW
 MESSAGE_ID: {message_id}
 FROM: {follower}@{ip_address}
 TO: {userID}
 TIMESTAMP: {timeStamp}
-TOKEN: {follower}@{ip_address}|{timeStamp + ttl}|follow
+TOKEN: {follower}@{ip_address}|{token}|follow
 """
 def followSimpleMessage(follower):
     return f"""User {follower} has followed you"""

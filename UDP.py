@@ -7,7 +7,7 @@ import Messages
 # === CONFIGURATION ===
 PORT = 50999
 BUFFER_SIZE = 4096
-PEER_IP = "127.0.0.1" # Replace with the actual peer IP address
+PEER_IP = "192.168.1.52" # Replace with the actual peer IP address
 DEFAULT_TTL = 3600  # 1 hour default
 
 # === USER INPUTS ===
@@ -41,7 +41,7 @@ def broadcast_ping(name, status):
         ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
         sock.sendto(msg.encode(), (PEER_IP, PORT))
         sock.sendto(ping.encode(), (PEER_IP, PORT))
-        time.sleep(5) # wait for 5 minutes
+        time.sleep(300) # wait for 5 minutes
         
 # === RECEIVE LOOP ===
 def receive_messages(verbose):
@@ -133,7 +133,8 @@ def send_messages(name, status, verbose):
                         sender=name,
                         ip_address=ip_address,
                         userID=userID,
-                        message=message
+                        message=message,
+                        ttl=ttl
                     )
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Direct message sent.")
