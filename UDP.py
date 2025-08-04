@@ -34,9 +34,11 @@ def broadcast_ping(name, status):
                     av_type="image/png",
                     av_encoding="base64",
                     av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")  # Truncated sample
-            ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
-        else: return
-
+        else: msg = Messages.simpleProfMessage(
+                    display_name=name,
+                    status=status)
+        
+        ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
         sock.sendto(msg.encode(), (PEER_IP, PORT))
         sock.sendto(ping.encode(), (PEER_IP, PORT))
         time.sleep(30)
