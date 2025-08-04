@@ -8,24 +8,24 @@ PORT = 50999
 BUFFER_SIZE = 4096
 PEER_IP = "192.168.1.52" # Replace with the actual peer IP address
 
+# === USER INPUTS ===
+name = input("Enter your display name: ");
+status = input("Enter your status: ");
+verbose = False  # Verbose mode flag
+
 # === UDP SOCKET SETUP ===
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(("0.0.0.0", PORT)) # Bind to all interfaces on the specified port
 print(f"Successfully bound to port {PORT}")
 
 # === RECEIVE LOOP ===
-def receive_messages():
+def receive_messages(verbose):
     while True:
         data, addr = sock.recvfrom(BUFFER_SIZE)
         print(f"\nReceived from {addr}:\n{data.decode()}\n")
 
-# === USER INPUTS ===
-name = input("Enter your display name: ");
-status = input("Enter your status: ");
-verbose = False  # Verbose mode flag
-
 # === SEND LOOP ===
-def send_messages(name, status):
+def send_messages(name, status, verbose):
     ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
     while True: 
         command = input("Enter command (--help for options): ")
@@ -57,4 +57,4 @@ def send_messages(name, status):
 recv_thread = threading.Thread(target=receive_messages, args=(verbose,), daemon=True)
 recv_thread.start()
 
-send_messages(name, status)  # Runs in main thread
+send_messages(name, status, verbose)  # Runs in main thread
