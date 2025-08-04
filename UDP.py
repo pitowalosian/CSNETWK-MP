@@ -62,8 +62,8 @@ def send_messages(name, status, verbose):
                 verbose = True;
                 print("Verbose mode enabled.")
             case "--ttl": 
-                input = input(f"Enter TTL in seconds (default = {DEFAULT_TTL}): ").strip()
-                ttl = int(input) if input.isdigit() else DEFAULT_TTL
+                getTTL = input(f"Enter TTL in seconds (default = {DEFAULT_TTL}): ").strip()
+                ttl = int(getTTL) if getTTL.isdigit() else DEFAULT_TTL
             case "--profile":
                 if (not verbose):
                     msg = Messages.simpleProfMessage(display_name=name, status=status)
