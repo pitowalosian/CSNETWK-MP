@@ -47,7 +47,21 @@ def send_messages(name, status, verbose):
                     av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."  # Truncated sample
                 )
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
-                print("Message sent.")
+                print("Profile Message sent.")
+            case "--dm":
+                userID = input("Enter recipient's user ID: ")
+                message = input("Enter your message: ")
+                if (not verbose):
+                    msg = Messages.simpleDMMessage(sender=name, userID=userID, message=message)
+                else:
+                    msg = Messages.verboseDMMessage(
+                        sender=name,
+                        ip_address=ip_address,
+                        userID=userID,
+                        message=message
+                    )
+                sock.sendto(msg.encode(), (PEER_IP, PORT))
+                print("Direct message sent.")
             case "--exit":
                 print("Exiting...")
                 sock.close()

@@ -1,3 +1,8 @@
+import time
+import uuid
+
+timeStamp = int(time.time())
+message_id = uuid.uuid4().hex[:8]
 # === PROFILE MESSAGE FORMAT ===
 def verboseProfMessage(display_name, ip_address, status, av_type, av_encoding, av_data):
     return f"""TYPE: PROFILE
@@ -14,3 +19,21 @@ def simpleProfMessage(display_name, status):
 USER_ID: {display_name}
 STATUS: {status}
 """
+
+# === POST MESSAGE FORMAT ===
+
+# === DM MESSAGE FORMAT ===
+def verboseDMMessage(sender, ip_address, userID, message):
+    return f"""TYPE: DM
+    FROM: {sender}@{ip_address}
+    TO: {userID}
+    CONTENT: {message}
+    TIMESTAMP: {timeStamp}
+    MESSAGE_ID: {message_id}
+    TOKEN: {sender}@{ip_address}|{message_id}|chat
+"""
+def simpleDMMessage(sender, userID, message):
+    return f"""DISPLAY_NAME: {sender}
+    CONTENT: {message}
+    """
+
