@@ -32,8 +32,9 @@ def verboseDMMessage(sender, ip_address, userID, message):
     MESSAGE_ID: {message_id}
     TOKEN: {sender}@{ip_address}|{message_id}|chat
 """
-def simpleDMMessage(sender, userID, message):
-    return f"""DISPLAY_NAME: {sender}
+def simpleDMMessage(sender, message):
+    return f"""
+    DISPLAY_NAME: {sender}
     CONTENT: {message}
     """
 
