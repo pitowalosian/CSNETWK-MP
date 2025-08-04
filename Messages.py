@@ -7,7 +7,7 @@ message_id = f"{message_id1:016x}"  # Convert to hex and remove '0x' prefix
 
 # === PROFILE MESSAGE FORMAT ===
 def verboseProfMessage(display_name, ip_address, status, av_type, av_encoding, av_data):
-    return f"""TYPE: PROFILE
+    return f"""\nTYPE: PROFILE
 USER_ID: {display_name}@{ip_address}
 DISPLAY_NAME: {display_name}
 STATUS: {status}
@@ -23,7 +23,7 @@ STATUS: {status}
 
 # === POST MESSAGE FORMAT ===
 def verbosePostMessage(display_name, ip_address, ttl, content, av_type, av_encoding, av_data):
-    return f"""TYPE: POST
+    return f"""\nTYPE: POST
 USER_ID: {display_name}@{ip_address}
 CONTENT: {content}
 TTL: {ttl}
@@ -31,7 +31,7 @@ MESSAGE_ID: {message_id}
 TOKEN: {display_name}@{ip_address}|{timeStamp + ttl}|broadcast
 """
 def simplePostMessage(display_name, content, av_type, av_encoding, av_data):
-    message = f"""TYPE: POST
+    message = f"""\nTYPE: POST
 DISPLAY_NAME: {display_name}
 CONTENT: {content}"""
     if av_type and av_encoding and av_data:
@@ -43,7 +43,7 @@ AVATAR_DATA: {av_data}"""
 
 # === DM MESSAGE FORMAT ===
 def verboseDMMessage(sender, ip_address, userID, message, ttl):
-    return f"""TYPE: DM
+    return f"""\nTYPE: DM
 FROM: {sender}@{ip_address}
 TO: {userID}
 CONTENT: {message}
@@ -65,13 +65,13 @@ AVATAR_DATA: {av_data}"""
 
 # === PING MESSAGE FORMAT ===
 def pingMessage(display_name, ip_address):
-    return f"""TYPE: PING
+    return f"""\nTYPE: PING
 USER_ID: {display_name}@{ip_address}
 """
 
 # =k== ACK MESSAGE FORMAT ===
 def ackMessage(message_id):
-    return f"""TYPE: ACK
+    return f"""\nTYPE: ACK
 MESSAGE_ID: {message_id}
 STATUS: RECEIVED
 """
@@ -79,7 +79,7 @@ STATUS: RECEIVED
 # === FOLLOW MESSAGE FORMAT ===
 def followVerboseMessage(follower, userID, ip_address, ttl):
     token = timeStamp + ttl
-    return f"""TYPE: FOLLOW
+    return f"""\nTYPE: FOLLOW
 MESSAGE_ID: {message_id}
 FROM: {follower}@{ip_address}
 TO: {userID}
@@ -91,7 +91,7 @@ def followSimpleMessage(follower):
 
 # === UNFOLLOW MESSAGE FORMAT ===
 def unfollowMessage(follower, userID, ip_address, ttl):
-    return f"""TYPE: UNFOLLOW
+    return f"""\nTYPE: UNFOLLOW
 MESSAGE_ID: {message_id}
 FROM: {follower}@{ip_address}
 TO: {userID}

@@ -49,7 +49,7 @@ def receive_messages(verbose):
         data, addr = sock.recvfrom(BUFFER_SIZE)
         message = data.decode()
         print(f"\n{message}\n")
-        
+
         # Auto-reply ACK if MESSAGE_ID is found
         message_lines = message.strip().splitlines()
         msg_type = None
@@ -63,11 +63,9 @@ def receive_messages(verbose):
 
         # Automatically ACK messages (DM, POST, etc.)
         if message_id and msg_type != "ACK":
-            ack = Messages.ackMessage({message_id})
+            ack = Messages.ackMessage(message_id)
             if verbose.is_set():
                 sock.sendto(ack.encode(), addr)
-
-
 
 # === SEND LOOP ===
 def send_messages(name, status, verbose):
@@ -89,9 +87,8 @@ def send_messages(name, status, verbose):
                 getTTL = input(f"Enter TTL in seconds (default = {DEFAULT_TTL}): ").strip()
                 ttl = int(getTTL) if getTTL.isdigit() else DEFAULT_TTL
             case "profile":
-                if (not verbose):
-                    msg = Messages.simpleProfMessage(display_name=name, status=status)
-                else: msg = Messages.verboseProfMessage(
+                if verbose.is_set():
+                    msg = Messages.verboseProfMessage(
                     display_name=name,
                     ip_address=ip_address,
                     status=status,
@@ -99,18 +96,12 @@ def send_messages(name, status, verbose):
                     av_encoding="base64",
                     av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."  # Truncated sample
                 )
+                else: msg = Messages.simpleProfMessage(display_name=name, status=status)
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Profile Message sent.")
             case "post":
                 content = input("Enter your post content: ")
-                if (not verbose):
-                    msg = Messages.simplePostMessage(
-                        display_name=name, 
-                        content=content,
-                        av_type="image/png",
-                        av_encoding="base64",
-                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
-                else:
+                if verbose.is_set():
                     msg = Messages.verbosePostMessage(
                         display_name=name,
                         ip_address=ip_address,
@@ -120,15 +111,20 @@ def send_messages(name, status, verbose):
                         av_encoding="base64",
                         av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."
                     )
+                else:
+                    msg = Messages.simplePostMessage(
+                        display_name=name, 
+                        content=content,
+                        av_type="image/png",
+                        av_encoding="base64",
+                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Post message sent.")
             case "dm":
                 recName = input("Enter recipient's display name: ")
                 message = input("Enter your message: ")
                 userID = f"{recName}@{PEER_IP}"
-                if (not verbose):
-                    msg = Messages.simpleDMMessage(sender=name, message=message)
-                else:
+                if verbose.is_set():
                     msg = Messages.verboseDMMessage(
                         sender=name,
                         ip_address=ip_address,
@@ -136,6 +132,8 @@ def send_messages(name, status, verbose):
                         message=message,
                         ttl=ttl
                     )
+                else:
+                    msg = Messages.simpleDMMessage(sender=name, message=message)
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Direct message sent.")
             case "--exit":
