@@ -49,15 +49,15 @@ def send_messages(name, status, verbose):
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
                 print("Profile Message sent.")
             case "--dm":
-                userID = input("Enter recipient's user ID: ")
+                recName = input("Enter recipient's display name: ")
                 message = input("Enter your message: ")
                 if (not verbose):
-                    msg = Messages.simpleDMMessage(sender=name, userID=userID, message=message)
+                    msg = Messages.simpleDMMessage(sender=name, userID=recName, message=message)
                 else:
                     msg = Messages.verboseDMMessage(
                         sender=name,
                         ip_address=ip_address,
-                        userID=userID,
+                        userID=recName@PEER_IP,
                         message=message
                     )
                 sock.sendto(msg.encode(), (PEER_IP, PORT))
