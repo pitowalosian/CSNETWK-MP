@@ -62,6 +62,7 @@ void startServer() {
         }
         else if (strstr(buffer, "TYPE: DM")) {
             Dm dm = parseDm(buffer);
+            printDMVerbose(dm);
             // printDMSimple(profiles, profileCount, dm); // Assuming profiles and profileCount are defined
         }
         else {

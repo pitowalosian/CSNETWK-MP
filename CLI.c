@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "socket.h"
+#include "DM.h"
 
 char* createProfileMessage(const char* userID, const char* displayName,
                            const char* status, const char* avatarType,
@@ -131,7 +132,10 @@ int printMenu() {
     } else if (strcmp(input, "exit") == 0) {
         printf("Exiting CLI...\n");
         return 1; // Signal to main to exit
-    } else {
+    } else if (strcmp(input, "DM") == 0) {
+        Dm dm = createDm("11", "22", "Hello", "2023-10-01T12:00:00Z", "msg123", "token123");
+        return 0;
+    } else if (strcmp(input, "verbose") == 0) { 
         printf("Unknown command: %s\n", input);
     }
     return 0;
@@ -139,6 +143,7 @@ int printMenu() {
 
 int main() {
     int exit = 0;
+
     while (!exit) {
         exit = printMenu();
     }
