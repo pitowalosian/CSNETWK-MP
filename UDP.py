@@ -14,6 +14,8 @@ DEFAULT_TTL = 3600  # 1 hour default
 name = input("Enter your display name: ");
 status = input("Enter your status: ");
 verbose = threading.Event()  # Verbose mode flag
+peers = {} # store peer data 
+peers_mess = {} # store message data 
 
 # === UDP SOCKET SETUP ===
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -48,7 +50,7 @@ def receive_messages(verbose):
     while True:
         data, addr = sock.recvfrom(BUFFER_SIZE)
         message = data.decode()
-        print(f"\n{message}\n")
+        print(f"{message}\n")
 
         # Auto-reply ACK if MESSAGE_ID is found
         message_lines = message.strip().splitlines()
@@ -66,6 +68,37 @@ def receive_messages(verbose):
             ack = Messages.ackMessage(message_id)
             if verbose.is_set():
                 sock.sendto(ack.encode(), addr)
+
+        # Take note of known peers
+        if msg_type == "PROFILE":
+            user_id = None
+            display_name = None
+            status = None
+
+            for line in message_lines:
+                if line.startswith("USER_ID:"):
+                    user_id = line.split(":", 1)[1].strip()
+                elif line.startswith("DISPLAY_NAME:"):
+                    display_name = line.split(":", 1)[1].strip()
+                elif line.startswith("STATUS:"):
+                    status = line.split(":", 1)[1].strip()
+            
+            if user_id and display_name:
+                peers[user_id] = {
+                    "display_name": display_name,
+                    "status": status,
+                    "ip": addr[0]
+                }
+
+        # Stores known peers messages
+        if msg_type in {"POST", "DM"}:
+            sender_id = None
+            for line in message_lines:
+                if line.startswith("FROM:"):
+                    sender_id = line.split(":", 1)[1].strip()
+
+            if sender_id:
+                peers_mess.setdefault(sender_id, []).append(message)
 
 # === SEND LOOP ===
 def send_messages(name, status, verbose):
@@ -86,6 +119,17 @@ def send_messages(name, status, verbose):
             case "--ttl": 
                 getTTL = input(f"Enter TTL in seconds (default = {DEFAULT_TTL}): ").strip()
                 ttl = int(getTTL) if getTTL.isdigit() else DEFAULT_TTL
+            case "--peers":
+                print("\n=== Known Peers ===")
+                for user_id, info in peers.items():
+                    print(f"{info['display_name']} ({user_id}) - {info.get('status', '')}")
+
+                    msgs = peers_mess.get(user_id, [])
+                    print(f"  Messages from {info['display_name']} ({len(msgs)}):")
+                    for msg in msgs:
+                        print("    ---")
+                        print("    " + "\n    ".join(msg.strip().splitlines()))
+                print("====================\n")
             case "profile":
                 if verbose.is_set():
                     msg = Messages.verboseProfMessage(
