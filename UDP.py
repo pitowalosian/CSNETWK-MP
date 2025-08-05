@@ -7,7 +7,6 @@ import Messages
 # === CONFIGURATION ===
 PORT = 50999
 BUFFER_SIZE = 4096
-PEER_IP = "192.168.1.52" # Replace with the actual peer IP address
 DEFAULT_TTL = 3600  # 1 hour default
 
 # === USER INPUTS ===
@@ -22,6 +21,15 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Allow address reuse
 sock.bind(("0.0.0.0", PORT)) # Bind to all interfaces on the specified port
 print(f"Successfully bound to port {PORT}")
+
+# === Send to all peers ===
+def sendToAllPeers(message):
+    for user_id, info, in peers.items():
+        peer_ip = info["ip"]
+        try:
+            sock.sendto(message.encode(), (peer_ip, PORT))
+        except Exception as e:
+            print(f"Failed to send to {peer_ip}: {e}\n")
 
 # === PING MESSAGE ===
 def broadcast_ping(name, status):
@@ -41,12 +49,13 @@ def broadcast_ping(name, status):
                     status=status)
         
         ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
-        sock.sendto(msg.encode(), (PEER_IP, PORT))
-        sock.sendto(ping.encode(), (PEER_IP, PORT))
+        sendToAllPeers(msg)
+        sendToAllPeers(ping)
         time.sleep(300) # wait for 5 minutes
         
 # === RECEIVE LOOP ===
 def receive_messages(verbose):
+    ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
     while True:
         data, addr = sock.recvfrom(BUFFER_SIZE)
         message = data.decode()
@@ -99,7 +108,23 @@ def receive_messages(verbose):
 
             if sender_id:
                 peers_mess.setdefault(sender_id, []).append(message)
+        
+        if msg_type == "FOLLOW":
+            from_disp = None
 
+            for line in message_lines:
+                if line.startswith("FROM: "):
+                    from_disp = line.split(":", 1)[1].strip()
+            if from_disp:
+                if verbose.is_set():
+                    msg = Messages.verboseFollowMessage(
+                        follower=from_disp,
+                        userID=name,
+                        ip_address=ip_address,
+                        ttl=DEFAULT_TTL
+                    )
+                else: msg = Messages.simpleFollowMessage(from_disp)
+            print(msg)
 # === SEND LOOP ===
 def send_messages(name, status, verbose):
     ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
@@ -122,7 +147,7 @@ def send_messages(name, status, verbose):
             case "--peers":
                 print("\n=== Known Peers ===")
                 for user_id, info in peers.items():
-                    print(f"{info['display_name']} ({user_id}) - {info.get('status', '')}")
+                    print(f"{info['display_name']} ({user_id}) - {info.get('status', '')}\n")
 
                     msgs = peers_mess.get(user_id, [])
                     print(f"  Messages from {info['display_name']} ({len(msgs)}):")
@@ -141,7 +166,7 @@ def send_messages(name, status, verbose):
                     av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."  # Truncated sample
                 )
                 else: msg = Messages.simpleProfMessage(display_name=name, status=status)
-                sock.sendto(msg.encode(), (PEER_IP, PORT))
+                sendToAllPeers(msg)
                 print("Profile Message sent.")
             case "post":
                 content = input("Enter your post content: ")
@@ -162,24 +187,54 @@ def send_messages(name, status, verbose):
                         av_type="image/png",
                         av_encoding="base64",
                         av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
-                sock.sendto(msg.encode(), (PEER_IP, PORT))
+                sendToAllPeers(msg)
                 print("Post message sent.")
             case "dm":
                 recName = input("Enter recipient's display name: ")
                 message = input("Enter your message: ")
-                userID = f"{recName}@{PEER_IP}"
-                if verbose.is_set():
-                    msg = Messages.verboseDMMessage(
-                        sender=name,
-                        ip_address=ip_address,
-                        userID=userID,
-                        message=message,
-                        ttl=ttl
-                    )
-                else:
-                    msg = Messages.simpleDMMessage(sender=name, message=message)
-                sock.sendto(msg.encode(), (PEER_IP, PORT))
-                print("Direct message sent.")
+                recipient = None
+                for user_id, info, in peers.items():
+                    if info["display_name"] == recName:
+                        recipient = info
+                        userID = user_id
+                        return
+                if recipient:
+                    peer_ip = recipient["ip"]        
+                    if verbose.is_set():
+                        msg = Messages.verboseDMMessage(
+                            sender=name,
+                            ip_address=ip_address,
+                            userID=userID,
+                            message=message,
+                            ttl=ttl
+                        )
+                    else:
+                        msg = Messages.simpleDMMessage(sender=name, message=message)
+                    sock.sendto(msg.encode(), (peer_ip, PORT))
+                    print("Direct message sent.\n")
+                else: print("No user found.\n")
+            case "follow":
+                targetFollow = input("Enter display name to follow: ")
+                followed = None
+                for user_id, info, in peers.items():
+                    if info["display_name"] == recName:
+                        followed = info
+                        userID = user_id
+                        return
+                if followed:
+                    if verbose.is_set():
+                        msg = Messages.verboseFollowMessage(
+                            follower=name,
+                            userID=userID,
+                            ip_address=ip_address,
+                            ttl=ttl
+                        )
+                    else:
+                        msg = Messages.simpleFollowMessage(name)
+                    sock.sendto(msg.encode(), (peer_ip, PORT))
+                    print(f"You are now following {targetFollow}\n")
+                else: print("No user found.\n")
+
             case "--exit":
                 print("Exiting...")
                 sock.close()
