@@ -7,13 +7,15 @@ import Messages
 # === CONFIGURATION ===
 PORT = 50999
 BUFFER_SIZE = 4096
+PEER_IP = "10.50.168.225" # Replace with the actual peer IP address
 DEFAULT_TTL = 3600  # 1 hour default
 
 # === USER INPUTS ===
-name = input("Enter your display name: ");
-status = input("Enter your status: ");
+name = input("Enter your display name: ")
+status = input("Enter your status: ")
 verbose = threading.Event()  # Verbose mode flag
 peers = {} # store peer data 
+followers = {}
 peers_mess = {} # store message data 
 
 # === UDP SOCKET SETUP ===
@@ -22,43 +24,23 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Allow address reus
 sock.bind(("0.0.0.0", PORT)) # Bind to all interfaces on the specified port
 print(f"Successfully bound to port {PORT}")
 
-# === Send to all peers ===
-def sendToAllPeers(message):
-    for user_id, info, in peers.items():
-        peer_ip = info["ip"]
-        try:
-            sock.sendto(message.encode(), (peer_ip, PORT))
-        except Exception as e:
-            print(f"Failed to send to {peer_ip}: {e}\n")
-
 # === PING MESSAGE ===
-def broadcast_ping(name, status):
+def broadcast_ping(name, verbose):
     ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
 
     while True:
         if verbose.is_set():
-            msg = Messages.verboseProfMessage(
-                    display_name=name,
-                    ip_address=ip_address,
-                    status=status,
-                    av_type="image/png",
-                    av_encoding="base64",
-                    av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")  # Truncated sample
-        else: msg = Messages.simpleProfMessage( # remove if not needed
-                    display_name=name,
-                    status=status)
+            ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
+            for user_id, info in peers.items():
+                    sock.sendto(ping.encode(), (info["ip"], PORT))
+            time.sleep(20) # wait for 5 minutes
         
-        ping = Messages.pingMessage(display_name=name, ip_address=ip_address)
-        sendToAllPeers(msg)
-        sendToAllPeers(ping)
-        time.sleep(300) # wait for 5 minutes
-        
+
 # === RECEIVE LOOP ===
 def receive_messages(verbose):
-    ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
     while True:
         data, addr = sock.recvfrom(BUFFER_SIZE)
-        message = data.decode()
+        message = data.decode().strip()
         print(f"{message}\n")
 
         # Auto-reply ACK if MESSAGE_ID is found
@@ -108,29 +90,27 @@ def receive_messages(verbose):
 
             if sender_id:
                 peers_mess.setdefault(sender_id, []).append(message)
-        
-        if msg_type == "FOLLOW":
-            from_disp = None
 
+        if msg_type == "FOLLOW":
+            follower = None
             for line in message_lines:
-                if line.startswith("FROM: "):
-                    from_disp = line.split(":", 1)[1].strip()
-            if from_disp:
-                if verbose.is_set():
-                    msg = Messages.verboseFollowMessage(
-                        follower=from_disp,
-                        userID=name,
-                        ip_address=ip_address,
-                        ttl=DEFAULT_TTL
-                    )
-                else: msg = Messages.simpleFollowMessage(from_disp)
-            print(msg)
+                if line.startswith("FROM"):
+                    follower = line.split(":", 1)[1].strip()
+
+            if follower:
+                followers[follower] = {
+                    "user_id": follower,
+                    "ip": addr[0]
+                }
+
+
+
 # === SEND LOOP ===
 def send_messages(name, status, verbose):
     ip_address = socket.gethostbyname(socket.gethostname())  # Get local IP
     ttl = DEFAULT_TTL  # Default TTL
     while True: 
-        command = input("Enter command (--help for options): ")
+        command = input("\nEnter command (--help for options): ")
         match command:
             case "--help":
                 print("Available commands:\n--help,\n--exit,\n--verbose,\n--ttl\nprofile,\npost,\ndm")
@@ -147,7 +127,7 @@ def send_messages(name, status, verbose):
             case "--peers":
                 print("\n=== Known Peers ===")
                 for user_id, info in peers.items():
-                    print(f"{info['display_name']} ({user_id}) - {info.get('status', '')}\n")
+                    print(f"{info['display_name']} ({user_id}) - {info.get('status', '')}")
 
                     msgs = peers_mess.get(user_id, [])
                     print(f"  Messages from {info['display_name']} ({len(msgs)}):")
@@ -160,14 +140,12 @@ def send_messages(name, status, verbose):
                     msg = Messages.verboseProfMessage(
                     display_name=name,
                     ip_address=ip_address,
-                    status=status,
-                    av_type="image/png",
-                    av_encoding="base64",
-                    av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."  # Truncated sample
+                    status=status
                 )
                 else: msg = Messages.simpleProfMessage(display_name=name, status=status)
-                sendToAllPeers(msg)
-                print("Profile Message sent.")
+                
+                sock.sendto(msg.encode(), ('<broadcast>', PORT))
+                print("\nTYPE: ACK\nSTATUS: RECEIVED")
             case "post":
                 content = input("Enter your post content: ")
                 if verbose.is_set():
@@ -175,29 +153,22 @@ def send_messages(name, status, verbose):
                         display_name=name,
                         ip_address=ip_address,
                         ttl=ttl,
-                        content=content,
-                        av_type="image/png",
-                        av_encoding="base64",
-                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+                        content=content
                     )
                 else:
                     msg = Messages.simplePostMessage(
                         display_name=name, 
-                        content=content,
-                        av_type="image/png",
-                        av_encoding="base64",
-                        av_data="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
-                sendToAllPeers(msg)
-                print("Post message sent.")
+                        content=content)
+                for user_id, info in followers.items():
+                    sock.sendto(msg.encode(), (info["ip"], PORT))
             case "dm":
                 recName = input("Enter recipient's display name: ")
                 message = input("Enter your message: ")
                 recipient = None
-                for user_id, info, in peers.items():
+                for user_id, info in peers.items():
                     if info["display_name"] == recName:
                         recipient = info
                         userID = user_id
-                        return
                 if recipient:
                     peer_ip = recipient["ip"]        
                     if verbose.is_set():
@@ -211,17 +182,16 @@ def send_messages(name, status, verbose):
                     else:
                         msg = Messages.simpleDMMessage(sender=name, message=message)
                     sock.sendto(msg.encode(), (peer_ip, PORT))
-                    print("Direct message sent.\n")
                 else: print("No user found.\n")
             case "follow":
                 targetFollow = input("Enter display name to follow: ")
                 followed = None
-                for user_id, info, in peers.items():
-                    if info["display_name"] == recName:
+                for user_id, info in peers.items():
+                    if info["display_name"] == targetFollow:
                         followed = info
                         userID = user_id
-                        return
                 if followed:
+                    peer_ip = followed["ip"]
                     if verbose.is_set():
                         msg = Messages.verboseFollowMessage(
                             follower=name,
@@ -232,9 +202,27 @@ def send_messages(name, status, verbose):
                     else:
                         msg = Messages.simpleFollowMessage(name)
                     sock.sendto(msg.encode(), (peer_ip, PORT))
-                    print(f"You are now following {targetFollow}\n")
                 else: print("No user found.\n")
-
+            case "unfollow":
+                targetFollow = input("Enter display name to unfollow: ")
+                followed = None
+                for user_id, info in peers.items():
+                    if info["display_name"] == targetFollow:
+                        followed = info
+                        userID = user_id
+                if followed:
+                    peer_ip = followed["ip"]
+                    if verbose.is_set():
+                        msg = Messages.unfollowVerboseMessage(
+                            follower=name,
+                            userID=userID,
+                            ip_address=ip_address,
+                            ttl=ttl
+                        )
+                    else:
+                        msg = Messages.unfollowSimpleMessage(name)
+                    sock.sendto(msg.encode(), (peer_ip, PORT))
+                else: print("No user found.\n")
             case "--exit":
                 print("Exiting...")
                 sock.close()
@@ -244,7 +232,7 @@ def send_messages(name, status, verbose):
 # === RUN THREADS ===
 recv_thread = threading.Thread(target=receive_messages, args=(verbose,), daemon=True)
 recv_thread.start()
-ping_thread = threading.Thread(target=broadcast_ping, args=(name, status,), daemon=True)
+ping_thread = threading.Thread(target=broadcast_ping, args=(name, verbose,), daemon=True)
 ping_thread.start()
 
 send_messages(name, status, verbose)  # Runs in main thread
