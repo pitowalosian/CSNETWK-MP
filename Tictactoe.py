@@ -9,13 +9,13 @@ BUFFER = 4096
 
 
 board = [' '] * 9
-games = {}        # game_id -> board state
-my_id = f"{getpass.getuser()}@127.0.0.1"
-connections = {}  # user_id -> (ip, port)
-game_info = {}    # store current game info
+games = {}        
+my_id = f"{getpass.getuser()}@198.0.0.1"
+connections = {}  
+game_info = {}    
 
 
-# === Message Handlers ===
+
 
 def handle_invite(msg, addr):
     sender = msg['FROM']
@@ -71,7 +71,6 @@ def server_thread():
         elif msg_type == "TICTACTOE_RESULT":
             handle_result(msg)
 
-# === Game Logic ===
 
 def display_board():
     b = games[game_info['gameid']]
@@ -93,7 +92,7 @@ def check_result(symbol, b):
         return "DRAW", []
     return None, []
 
-# === Senders ===
+
 
 def send_invite(opponent_id, opponent_ip):
     gameid = f"g{uuid.uuid4().hex[:3]}"
