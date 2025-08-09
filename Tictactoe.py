@@ -15,24 +15,6 @@ connections = {}  # user_id -> (ip, port)
 game_info = {}    # store current game info
 
 
-# === Networking ===
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('0.0.0.0', PORT))
-
-def create_token():
-    return f"{my_id}|{int(time.time()) + 3600}|game"
-
-def parse_message(msg):
-    return dict(line.split(": ", 1) for line in msg.strip().split("\n") if ": " in line)
-
-def send_message(msg, addr):
-    sock.sendto(msg.encode(), addr)
-
-def send_to_user(msg, user_id):
-    if user_id in connections:
-        send_message(msg, connections[user_id])
-
 # === Message Handlers ===
 
 def handle_invite(msg, addr):
@@ -41,8 +23,8 @@ def handle_invite(msg, addr):
     symbol = "O"
     connections[sender] = addr
 
-    print(f"\n🟢 Game invite from {sender}")
-    print("You are O. Waiting for opponent's move...")
+    print(f"\n Game invite from {sender}")
+    print("Waiting for opponent's move...")
 
     game_info.update({
         "gameid": gameid,
@@ -68,7 +50,7 @@ def handle_move(msg):
         print("Your turn. (Enter a position 0–8)")
 
 def handle_result(msg):
-    print("\n🏁 Game Over.")
+    print("\n Game Over.")
     display_board()
 
 def server_thread():
@@ -165,31 +147,3 @@ WINNING_LINE: {','.join(map(str, win_line))}
 TIMESTAMP: {int(time.time())}"""
     send_to_user(msg, game_info["opponent"])
 
-# === UI ===
-
-def main_loop():
-    while True:
-        cmd = input("\nType 'invite' or enter a move (0–8): ").strip()
-
-        if cmd == "invite":
-            opponent_id = input("Enter opponent ID (e.g., bob@127.0.0.1): ").strip()
-            opponent_ip = input("Enter opponent IP (e.g., 127.0.0.1): ").strip()
-            send_invite(opponent_id, opponent_ip)
-
-        elif cmd.isdigit() and game_info.get("symbol"):
-            pos = int(cmd)
-            b = games[game_info["gameid"]]
-            if 0 <= pos < 9 and b[pos] == ' ':
-                b[pos] = game_info["symbol"]
-                display_board()
-                send_move(pos)
-                game_info["turn"] += 1
-            else:
-                print("Invalid or occupied position.")
-
-# === Run ===
-
-if __name__ == "__main__":
-    threading.Thread(target=server_thread, daemon=True).start()
-    print(f"[{my_id}] Tic Tac Toe started. Listening on UDP port {PORT}.")
-    main_loop()
