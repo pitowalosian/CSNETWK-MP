@@ -1,0 +1,1 @@
+AI tools were only utilized as a guide to help define and further comprehend the goals of the machine project. It served as a reference to the project's criteria. The authors are solely responsible for the project's design and implementation. Any insights assisted by AI were thoroughly reviewed and analyzed to support the planning of the output. 
