@@ -11,27 +11,6 @@ LISTEN_PORT = 5005
 
 file_contexts = {}
 
-def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    except:
-        return "127.0.0.1"
-    finally:
-        s.close()
-
-def generate_user_id():
-    username = getpass.getuser()
-    ip_address = get_local_ip()
-    return f"{username}@{ip_address}"
-
-def create_token(user_id):
-    return f"{user_id}|{int(time.time()) + 3600}|file"
-
-def parse_message(msg):
-    lines = msg.strip().split('\n')
-    return {line.split(': ', 1)[0]: line.split(': ', 1)[1] for line in lines if ': ' in line}
 
 def send_file_offer(sock, my_id, receiver_id, receiver_ip, filename):
     filesize = os.path.getsize(filename)
@@ -163,21 +142,3 @@ def sender_loop(sock, my_id):
                 send_file_chunks(sock, my_id, receiver_id, receiver_ip, filename, fileid)
         elif cmd == "exit":
             break
-
-def main():
-    my_id = generate_user_id()
-    print(f"Your user ID: {my_id}")
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((my_id.split('@')[1], LISTEN_PORT))
-
-    # Start receiver thread
-    threading.Thread(target=receiver_loop, args=(my_id, sock), daemon=True).start()
-
-    # Start sender loop
-    sender_loop(sock, my_id)
-
-    sock.close()
-
-if __name__ == "__main__":
-    main()
